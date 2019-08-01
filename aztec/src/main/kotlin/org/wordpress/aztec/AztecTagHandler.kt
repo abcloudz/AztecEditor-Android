@@ -50,7 +50,13 @@ import org.wordpress.aztec.util.getLast
 import org.xml.sax.Attributes
 import java.util.ArrayList
 
-class AztecTagHandler(val context: Context, val plugins: List<IAztecPlugin> = ArrayList()) : Html.TagHandler {
+class AztecTagHandler(
+    val context: Context,
+    private val fixedImageWidthRes: Int,
+    private val fixedImageHeightRes: Int,
+    val plugins: List<IAztecPlugin> = ArrayList()
+) : Html.TagHandler {
+
     private val loadingDrawable: Drawable
 
     // Simple LIFO stack to track the html tag nesting for easy reference when we need to handle the ending of a tag
@@ -58,13 +64,16 @@ class AztecTagHandler(val context: Context, val plugins: List<IAztecPlugin> = Ar
 
     init {
         val styles = context.obtainStyledAttributes(R.styleable.AztecText)
-        loadingDrawable = ContextCompat.getDrawable(context, styles.getResourceId(R.styleable.AztecText_drawableLoading, R.drawable.ic_image_loading))!!
+        loadingDrawable =
+            ContextCompat.getDrawable(context, styles.getResourceId(R.styleable.AztecText_drawableLoading, R.drawable.ic_image_loading))!!
         styles.recycle()
     }
 
-    override fun handleTag(opening: Boolean, tag: String, output: Editable,
-                           context: Context, attributes: Attributes,
-                           nestingLevel: Int): Boolean {
+    override fun handleTag(
+        opening: Boolean, tag: String, output: Editable,
+        context: Context, attributes: Attributes,
+        nestingLevel: Int
+    ): Boolean {
         val wasTagHandled = processTagHandlerPlugins(tag, opening, output, attributes, nestingLevel)
         if (wasTagHandled) {
             return true
@@ -100,7 +109,11 @@ class AztecTagHandler(val context: Context, val plugins: List<IAztecPlugin> = Ar
                 return true
             }
             IMAGE -> {
-                handleMediaElement(opening, output, AztecImageSpan(context, loadingDrawable, nestingLevel, AztecAttributes(attributes)))
+                handleMediaElement(
+                    opening,
+                    output,
+                    AztecImageSpan(context, loadingDrawable, nestingLevel, AztecAttributes(attributes), fixedImageWidthRes, fixedImageHeightRes)
+                )
                 return true
             }
             VIDEO -> {
@@ -124,8 +137,12 @@ class AztecTagHandler(val context: Context, val plugins: List<IAztecPlugin> = Ar
             LINE -> {
                 if (opening) {
                     // Add an extra newline above the line to prevent weird typing on the line above
-                    start(output, AztecHorizontalRuleSpan(context, ContextCompat.getDrawable(context, R.drawable.img_hr)!!,
-                            nestingLevel, AztecAttributes(attributes)))
+                    start(
+                        output, AztecHorizontalRuleSpan(
+                            context, ContextCompat.getDrawable(context, R.drawable.img_hr)!!,
+                            nestingLevel, AztecAttributes(attributes)
+                        )
+                    )
                     output.append(Constants.MAGIC_CHAR)
                 } else {
                     end(output, AztecHorizontalRuleSpan::class.java)
@@ -148,15 +165,15 @@ class AztecTagHandler(val context: Context, val plugins: List<IAztecPlugin> = Ar
 
     private fun processTagHandlerPlugins(tag: String, opening: Boolean, output: Editable, attributes: Attributes, nestingLevel: Int): Boolean {
         plugins.filter { it is IHtmlTagHandler }
-                .map { it as IHtmlTagHandler }
-                .forEach({
-                    if (it.canHandleTag(tag)) {
-                        val wasHandled = it.handleTag(opening, tag, output, attributes, nestingLevel)
-                        if (wasHandled) {
-                            return true
-                        }
+            .map { it as IHtmlTagHandler }
+            .forEach({
+                if (it.canHandleTag(tag)) {
+                    val wasHandled = it.handleTag(opening, tag, output, attributes, nestingLevel)
+                    if (wasHandled) {
+                        return true
                     }
-                })
+                }
+            })
         return false
     }
 

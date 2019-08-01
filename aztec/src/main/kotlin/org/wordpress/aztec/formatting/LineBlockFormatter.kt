@@ -47,8 +47,9 @@ class LineBlockFormatter(editor: AztecText) : AztecFormatter(editor) {
              *                                                  multiple lines (before), current partially or entirely selected
              */
             if ((lineStart >= selStart && selEnd >= lineEnd)
-                    || (selEnd in lineStart..lineEnd)
-                    || (selStart in lineStart..lineEnd)) {
+                || (selEnd in lineStart..lineEnd)
+                || (selStart in lineStart..lineEnd)
+            ) {
                 list.add(i)
             }
         }
@@ -102,11 +103,11 @@ class LineBlockFormatter(editor: AztecText) : AztecFormatter(editor) {
         val nestingLevel = IAztecNestable.getNestingLevelAt(editableText, selectionStart)
 
         val span = AztecHorizontalRuleSpan(
-                editor.context,
-                ContextCompat.getDrawable(editor.context, R.drawable.img_hr)!!,
-                nestingLevel,
-                AztecAttributes(),
-                editor
+            editor.context,
+            ContextCompat.getDrawable(editor.context, R.drawable.img_hr)!!,
+            nestingLevel,
+            AztecAttributes(),
+            editor
         )
 
         val builder = SpannableStringBuilder(Constants.MAGIC_STRING)
@@ -119,19 +120,34 @@ class LineBlockFormatter(editor: AztecText) : AztecFormatter(editor) {
         editor.setSelection(newSelectionPosition)
     }
 
-    fun insertVideo(drawable: Drawable?, attributes: Attributes, onVideoTappedListener: OnVideoTappedListener?,
-                    onMediaDeletedListener: AztecText.OnMediaDeletedListener?) {
+    fun insertVideo(
+        drawable: Drawable?, attributes: Attributes, onVideoTappedListener: OnVideoTappedListener?,
+        onMediaDeletedListener: AztecText.OnMediaDeletedListener?
+    ) {
         val nestingLevel = IAztecNestable.getNestingLevelAt(editableText, selectionStart)
-        val span = AztecVideoSpan(editor.context, drawable, nestingLevel, AztecAttributes(attributes), onVideoTappedListener,
-                onMediaDeletedListener, editor)
+        val span = AztecVideoSpan(
+            editor.context, drawable, nestingLevel, AztecAttributes(attributes), onVideoTappedListener,
+            onMediaDeletedListener, editor
+        )
         insertMedia(span)
     }
 
-    fun insertImage(drawable: Drawable?, attributes: Attributes, onImageTappedListener: OnImageTappedListener?,
-                    onMediaDeletedListener: AztecText.OnMediaDeletedListener?) {
+    fun insertImage(
+        drawable: Drawable?, attributes: Attributes, onImageTappedListener: OnImageTappedListener?,
+        onMediaDeletedListener: AztecText.OnMediaDeletedListener?
+    ) {
         val nestingLevel = IAztecNestable.getNestingLevelAt(editableText, selectionStart)
-        val span = AztecImageSpan(editor.context, drawable, nestingLevel, AztecAttributes(attributes), onImageTappedListener,
-                onMediaDeletedListener, editor)
+        val span = AztecImageSpan(
+            editor.context,
+            drawable,
+            nestingLevel,
+            AztecAttributes(attributes),
+            editor.fixedImageWidthRes,
+            editor.fixedImageHeightRes,
+            onImageTappedListener,
+            onMediaDeletedListener,
+            editor
+        )
         insertMedia(span)
     }
 
@@ -141,17 +157,17 @@ class LineBlockFormatter(editor: AztecText) : AztecFormatter(editor) {
         val ssb = SpannableStringBuilder(Constants.IMG_STRING)
 
         ssb.setSpan(
-                span,
-                0,
-                1,
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            span,
+            0,
+            1,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
         )
 
         ssb.setSpan(
-                AztecMediaClickableSpan(span),
-                0,
-                1,
-                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
+            AztecMediaClickableSpan(span),
+            0,
+            1,
+            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE
         )
 
         // We need to be sure the cursor is placed correctly after media insertion

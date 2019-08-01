@@ -56,8 +56,12 @@ import java.util.ArrayList
 import java.util.Collections
 import java.util.Comparator
 
-class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = listOf(),
-                                            private val ignoredTags: List<String> = listOf("body", "html")) {
+class AztecParser @JvmOverloads constructor(
+    val plugins: List<IAztecPlugin> = listOf(),
+    private val fixedImageWidthRes: Int,
+    private val fixedImageHeighRest: Int,
+    private val ignoredTags: List<String> = listOf("body", "html")
+) {
     /**
      * A faster version of fromHtml(), intended for inspecting the span structure only. It doesn't prepare the text for
      * visual editing.
@@ -66,8 +70,12 @@ class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = li
     fun parseHtmlForInspection(source: String, context: Context): Spanned {
         val tidySource = tidy(source)
 
-        val spanned = SpannableString(Html.fromHtml(tidySource,
-                AztecTagHandler(context, plugins), context, plugins, ignoredTags))
+        val spanned = SpannableString(
+            Html.fromHtml(
+                tidySource,
+                AztecTagHandler(context, fixedImageWidthRes, fixedImageHeighRest, plugins), context, plugins, ignoredTags
+            )
+        )
 
         postprocessSpans(spanned)
 
@@ -77,8 +85,12 @@ class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = li
     fun fromHtml(source: String, context: Context): Spanned {
         val tidySource = tidy(source)
 
-        val spanned = SpannableStringBuilder(Html.fromHtml(tidySource,
-                AztecTagHandler(context, plugins), context, plugins, ignoredTags))
+        val spanned = SpannableStringBuilder(
+            Html.fromHtml(
+                tidySource,
+                AztecTagHandler(context, fixedImageWidthRes, fixedImageHeighRest, plugins), context, plugins, ignoredTags
+            )
+        )
 
         addVisualNewlinesToBlockElements(spanned)
         markBlockElementsAsParagraphs(spanned)
@@ -120,7 +132,7 @@ class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = li
 
     private fun clearForegroundColorSpans(spannable: SpannableStringBuilder) {
         spannable.getSpans(0, spannable.length, ForegroundColorSpan::class.java)
-                .forEach { spannable.removeSpan(it) }
+            .forEach { spannable.removeSpan(it) }
     }
 
     private fun postprocessHtml(source: String): String {
@@ -152,9 +164,9 @@ class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = li
 
             // a list item "repels" a child list so the list will appear in the next line
             val parentListItem = spanned.getSpans(spanned.getSpanStart(it), spanned.getSpanEnd(it), AztecListItemSpan::class.java)
-                    .filter { item -> item.nestingLevel < it.nestingLevel }
-                    .sortedBy { item -> item.nestingLevel }
-                    .firstOrNull()
+                .filter { item -> item.nestingLevel < it.nestingLevel }
+                .sortedBy { item -> item.nestingLevel }
+                .firstOrNull()
             val repelling = it is AztecListSpan && parentListItem != null
 
             val spanStart = spanned.getSpanStart(it)
@@ -206,7 +218,8 @@ class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = li
 
             // no need for newline if there's one and marked as visual
             if (spanned[spanEnd] == '\n'
-                    && spanned.getSpans(spanEnd, spanEnd, AztecVisualLinebreak::class.java).isNotEmpty()) {
+                && spanned.getSpans(spanEnd, spanEnd, AztecVisualLinebreak::class.java).isNotEmpty()
+            ) {
                 // but still, expand the span to include the newline for block spans, because they are paragraphs
                 if (it is IAztecParagraphStyle) {
                     spanned.setSpan(it, spanned.getSpanStart(it), spanEnd + 1, spanned.getSpanFlags(it))
@@ -233,22 +246,26 @@ class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = li
         }
     }
 
-    private fun expandSurroundingSpansAtStart(spanned: Editable,
-                                            paragraph: IAztecSurroundedWithNewlines,
-                                            spanStart: Int,
-                                            extra: Int) {
+    private fun expandSurroundingSpansAtStart(
+        spanned: Editable,
+        paragraph: IAztecSurroundedWithNewlines,
+        spanStart: Int,
+        extra: Int
+    ) {
         SpanWrapper.getSpans<IAztecNestable>(spanned, spanStart, spanned.getSpanEnd(paragraph))
-                .filter { parent -> parent.start == spanStart && parent.span.nestingLevel < paragraph.nestingLevel }
-                .forEach { parent -> parent.start -= extra }
+            .filter { parent -> parent.start == spanStart && parent.span.nestingLevel < paragraph.nestingLevel }
+            .forEach { parent -> parent.start -= extra }
     }
 
-    private fun expandSurroundingSpansAtEnd(spanned: Editable,
-                                            paragraph: IAztecSurroundedWithNewlines,
-                                            spanEnd: Int,
-                                            extra: Int) {
+    private fun expandSurroundingSpansAtEnd(
+        spanned: Editable,
+        paragraph: IAztecSurroundedWithNewlines,
+        spanEnd: Int,
+        extra: Int
+    ) {
         SpanWrapper.getSpans<IAztecNestable>(spanned, spanned.getSpanStart(paragraph), spanEnd)
-                .filter { parent -> parent.end == spanEnd && parent.span.nestingLevel < paragraph.nestingLevel }
-                .forEach { parent -> parent.end += extra }
+            .filter { parent -> parent.end == spanEnd && parent.span.nestingLevel < paragraph.nestingLevel }
+            .forEach { parent -> parent.end += extra }
     }
 
     // Always try to put a visual newline before block elements and only put one after if needed
@@ -304,8 +321,8 @@ class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = li
             }
 
             if (spanned.getSpans(spanStart, spanStart, IAztecSurroundedWithNewlines::class.java).any { before ->
-                spanned.getSpanEnd(before) == spanStart
-            }) {
+                    spanned.getSpanEnd(before) == spanStart
+                }) {
                 // the newline before us is the end of a previous block element so, return
                 return@forEach
             }
@@ -327,7 +344,7 @@ class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = li
 
     private fun markBlockElementsAsParagraphs(text: Spannable) {
         SpanWrapper.getSpans(text, 0, text.length, IAztecBlockSpan::class.java)
-                .map { it -> it.flags = Spanned.SPAN_PARAGRAPH }
+            .map { it -> it.flags = Spanned.SPAN_PARAGRAPH }
     }
 
     private fun cleanupZWJ(text: Editable) {
@@ -350,16 +367,18 @@ class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = li
         withinHtml(out, text, 0, text.length, null, -1)
     }
 
-    private fun withinHtml(out: StringBuilder, text: Spanned, start: Int, end: Int,
-                           grandParents: ArrayList<IAztecNestable>?, nestingLevel: Int) {
+    private fun withinHtml(
+        out: StringBuilder, text: Spanned, start: Int, end: Int,
+        grandParents: ArrayList<IAztecNestable>?, nestingLevel: Int
+    ) {
         var next: Int
         var i = start
         var parents: ArrayList<IAztecNestable>?
 
         do {
             val nestableElements = text.getSpans(i, end, IAztecNestable::class.java)
-                    .filter { it !is IAztecFullWidthImageSpan }
-                    .toTypedArray()
+                .filter { it !is IAztecFullWidthImageSpan }
+                .toTypedArray()
 
             nestableElements.sortWith(Comparator { a, b ->
                 val startComparison = text.getSpanStart(a).compareTo(text.getSpanStart(b))
@@ -412,8 +431,10 @@ class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = li
         consumeCursorIfInInput(out, text, end)
     }
 
-    private fun withinNestable(out: StringBuilder, text: Spanned, start: Int, end: Int,
-                               nestable: IAztecParagraphStyle, parents: ArrayList<IAztecNestable>?, nestingLevel: Int) {
+    private fun withinNestable(
+        out: StringBuilder, text: Spanned, start: Int, end: Int,
+        nestable: IAztecParagraphStyle, parents: ArrayList<IAztecNestable>?, nestingLevel: Int
+    ) {
 
         if (nestable.shouldParseAlignmentToHtml()) {
             CssStyleFormatter.removeStyleAttribute(nestable.attributes, CssStyleFormatter.CSS_TEXT_ALIGN_ATTRIBUTE)
@@ -422,8 +443,10 @@ class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = li
                 val direction = TextDirectionHeuristicsCompat.FIRSTSTRONG_LTR
                 val isRtl = direction.isRtl(text, start, end - start)
 
-                CssStyleFormatter.addStyleAttribute(nestable.attributes,
-                        CssStyleFormatter.CSS_TEXT_ALIGN_ATTRIBUTE, nestable.align!!.toCssString(isRtl))
+                CssStyleFormatter.addStyleAttribute(
+                    nestable.attributes,
+                    CssStyleFormatter.CSS_TEXT_ALIGN_ATTRIBUTE, nestable.align!!.toCssString(isRtl)
+                )
             }
         }
 
@@ -431,7 +454,7 @@ class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = li
 
         if (blockHandlers.isNotEmpty()) {
             blockHandlers.map { it as IBlockSpanHandler }
-                    .forEach { it.handleSpanStart(out, nestable) }
+                .forEach { it.handleSpanStart(out, nestable) }
         } else {
             out.append("<${nestable.startTag}>")
         }
@@ -440,21 +463,24 @@ class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = li
 
         if (blockHandlers.isNotEmpty()) {
             blockHandlers.map { it as IBlockSpanHandler }
-                    .forEach { it.handleSpanEnd(out, nestable) }
+                .forEach { it.handleSpanEnd(out, nestable) }
         } else {
             out.append("</${nestable.endTag}>")
         }
 
         if (end > 0
-                && text[end - 1] == Constants.NEWLINE
-                && text.getSpans(end - 1, end, AztecVisualLinebreak::class.java).isEmpty()
-                && !(parents?.any { it != nestable && text.getSpanEnd(it) == end } ?: false)) {
+            && text[end - 1] == Constants.NEWLINE
+            && text.getSpans(end - 1, end, AztecVisualLinebreak::class.java).isEmpty()
+            && !(parents?.any { it != nestable && text.getSpanEnd(it) == end } ?: false)
+        ) {
             out.append("<br>")
         }
     }
 
-    private fun withinContent(out: StringBuilder, text: Spanned, start: Int, end: Int,
-                              parents: ArrayList<IAztecNestable>?) {
+    private fun withinContent(
+        out: StringBuilder, text: Spanned, start: Int, end: Int,
+        parents: ArrayList<IAztecNestable>?
+    ) {
         var next: Int
 
         var i = start
@@ -482,8 +508,10 @@ class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = li
 
     // Copy from https://android.googlesource.com/platform/frameworks/base/+/master/core/java/android/text/Html.java,
     // remove some tag because we don't need them in Aztec.
-    private fun withinParagraph(out: StringBuilder, text: Spanned, start: Int, end: Int, nl: Int,
-                                parents: ArrayList<IAztecNestable>?) {
+    private fun withinParagraph(
+        out: StringBuilder, text: Spanned, start: Int, end: Int, nl: Int,
+        parents: ArrayList<IAztecNestable>?
+    ) {
         var next: Int
 
         var i = start
@@ -514,13 +542,13 @@ class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = li
                 }
 
                 plugins.filter { it is IInlineSpanHandler && it.canHandleSpan(span) }
-                        .map { it as IInlineSpanHandler }
-                        .forEach {
-                            it.handleSpanStart(out, span)
-                            if (!it.shouldParseContent()) {
-                                i = next
-                            }
+                    .map { it as IInlineSpanHandler }
+                    .forEach {
+                        it.handleSpanStart(out, span)
+                        if (!it.shouldParseContent()) {
+                            i = next
                         }
+                    }
 
                 if (span is AztecHorizontalRuleSpan) {
                     out.append("<${span.startTag} />")
@@ -547,10 +575,10 @@ class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = li
                 }
 
                 plugins.filter { it is IInlineSpanHandler && it.canHandleSpan(span) }
-                        .map { it as IInlineSpanHandler }
-                        .forEach {
-                            it.handleSpanEnd(out, span)
-                        }
+                    .map { it as IInlineSpanHandler }
+                    .forEach {
+                        it.handleSpanEnd(out, span)
+                    }
             }
 
             if (start == end)
@@ -648,11 +676,11 @@ class AztecParser @JvmOverloads constructor(val plugins: List<IAztecPlugin> = li
 
     private fun tidy(html: String): String {
         return html
-                .replace(Constants.ZWJ_STRING, "")
-                .replace(Constants.MAGIC_STRING, "")
-                .replace("(</? ?br>)*((aztec_cursor)?)</blockquote>".toRegex(), "$2</blockquote>")
-                .replace("(</? ?br>)*((aztec_cursor)?)</li>".toRegex(), "$2</li>")
-                .replace("(</? ?br>)*((aztec_cursor)?)</p>".toRegex(), "$2</p>")
-                .replace("(</? ?br>)*((aztec_cursor)?)</pre>".toRegex(), "$2</pre>")
+            .replace(Constants.ZWJ_STRING, "")
+            .replace(Constants.MAGIC_STRING, "")
+            .replace("(</? ?br>)*((aztec_cursor)?)</blockquote>".toRegex(), "$2</blockquote>")
+            .replace("(</? ?br>)*((aztec_cursor)?)</li>".toRegex(), "$2</li>")
+            .replace("(</? ?br>)*((aztec_cursor)?)</p>".toRegex(), "$2</p>")
+            .replace("(</? ?br>)*((aztec_cursor)?)</pre>".toRegex(), "$2</pre>")
     }
 }

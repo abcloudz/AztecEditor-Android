@@ -6,13 +6,18 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.view.Gravity
+import org.wordpress.android.util.AppLog
 import org.wordpress.aztec.AztecAttributes
 import org.wordpress.aztec.AztecText
 import java.util.ArrayList
 
-abstract class AztecMediaSpan(context: Context, drawable: Drawable?, override var attributes: AztecAttributes = AztecAttributes(),
-                              var onMediaDeletedListener: AztecText.OnMediaDeletedListener? = null,
-                              editor: AztecText? = null) : AztecDynamicImageSpan(context, drawable), IAztecAttributedSpan {
+abstract class AztecMediaSpan(
+    context: Context, drawable: Drawable?, override var attributes: AztecAttributes = AztecAttributes(),
+    var onMediaDeletedListener: AztecText.OnMediaDeletedListener? = null,
+    editor: AztecText? = null,
+    fixedWidthRes: Int = 0,
+    fixedHeightRes: Int = 0
+) : AztecDynamicImageSpan(context, drawable, fixedWidthRes, fixedHeightRes), IAztecAttributedSpan {
     abstract val TAG: String
 
     private val overlays: ArrayList<Pair<Drawable?, Int>> = ArrayList()
@@ -62,7 +67,12 @@ abstract class AztecMediaSpan(context: Context, drawable: Drawable?, override va
                 transY -= paint.fontMetricsInt.descent
             }
 
-            canvas.translate(x, transY.toFloat())
+            val transX = if (imageDrawable?.intrinsicWidth ?: 0 == 0) {
+                x
+            } else {
+                (canvas.width / 2 - (imageDrawable?.intrinsicWidth ?: 0) / 2).toFloat()
+            }
+            canvas.translate(transX, transY.toFloat())
             imageDrawable!!.draw(canvas)
         }
 
