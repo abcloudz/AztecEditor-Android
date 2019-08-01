@@ -100,7 +100,7 @@ abstract class AztecDynamicImageSpan(
         return if (textView == null) {
             sizeRect.width()
         } else {
-            (textView!!.width - (textView!!.width - sizeRect.width()) / 2) + 100
+            (textView!!.width - (textView!!.width - sizeRect.width()) / 2) + 50
         }
     }
 
@@ -161,6 +161,8 @@ abstract class AztecDynamicImageSpan(
 
         computeAspectRatio()
     }
+
+
 
     override fun draw(canvas: Canvas, text: CharSequence, start: Int, end: Int, x: Float, top: Int, y: Int, bottom: Int, paint: Paint) {
         canvas.save()

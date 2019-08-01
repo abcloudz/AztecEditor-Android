@@ -22,11 +22,4 @@ class AztecImageSpan(
     override fun onClick() {
         onImageTappedListener?.onImageTapped(attributes, getWidth(imageDrawable), getHeight(imageDrawable))
     }
-
-//    override var align: Layout.Alignment? = Layout.Alignment.ALIGN_CENTER
-
-//    override fun shouldParseAlignmentToHtml() = false
-
-//    override var startBeforeCollapse = -1
-//    override var endBeforeBleed = -1
 }
