@@ -42,6 +42,7 @@ import android.text.TextWatcher
 import android.text.style.SuggestionSpan
 import android.util.AttributeSet
 import android.util.DisplayMetrics
+import android.util.Log
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.MotionEvent
@@ -88,7 +89,6 @@ import org.wordpress.aztec.spans.CommentSpan
 import org.wordpress.aztec.spans.EndOfParagraphMarker
 import org.wordpress.aztec.spans.IAztecAttributedSpan
 import org.wordpress.aztec.spans.IAztecBlockSpan
-import org.wordpress.aztec.spans.IAztecCenteredImageSpan
 import org.wordpress.aztec.spans.UnknownClickableSpan
 import org.wordpress.aztec.spans.UnknownHtmlSpan
 import org.wordpress.aztec.toolbar.IAztecToolbar
@@ -301,6 +301,12 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
     var fixedImageWidthRes: Int = 0
     var fixedImageHeightRes: Int = 0
     var fixedImageMarginRes: Int = 0
+
+    private var isWaitingForNewLineChar = false
+    private var isEnterPressed = false
+    private var preEnterStartIndex = 0
+    private var preEnterEndIndex = 0
+    private var newLineStartIndex = 0
 
     interface OnSelectionChangedListener {
         fun onSelectionChanged(selStart: Int, selEnd: Int)
@@ -563,6 +569,10 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
         if (event.action == KeyEvent.ACTION_DOWN && event.keyCode == KeyEvent.KEYCODE_ENTER) {
             // Check if the external listener has consumed the enter pressed event
             // In that case stop the execution
+            Log.d("AztecText", "on Enter Pressed $selectionStart $selectionEnd")
+            isEnterPressed = true
+            preEnterStartIndex = selectionStart
+            preEnterEndIndex = selectionEnd
             if (onAztecKeyListener?.onEnterKey(text, false, 0, 0) == true) {
                 return true
             }
@@ -903,9 +913,29 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
         }
     }
 
+    private fun applyStylesToANewLine(end: Int) {
+        val oldStyles = getAppliedStyles(preEnterStartIndex, preEnterEndIndex)
+        post {
+            applyNewLineFormatting(oldStyles, newLineStartIndex, end)
+        }
+    }
+
     public override fun onSelectionChanged(selStart: Int, selEnd: Int) {
         super.onSelectionChanged(selStart, selEnd)
+        Log.d("AztecText", "onSelectionChanged $selStart $selEnd $isEnterPressed $isWaitingForNewLineChar")
         if (!isViewInitialized) return
+
+        if (isEnterPressed) {
+            isEnterPressed = !isEnterPressed
+            isWaitingForNewLineChar = true
+            newLineStartIndex = selStart
+        } else if (preEnterEndIndex > newLineStartIndex) {
+            preEnterEndIndex = newLineStartIndex
+            newLineStartIndex = selStart
+        } else if (isWaitingForNewLineChar) {
+            isWaitingForNewLineChar = false
+            applyStylesToANewLine(selStart)
+        }
 
         if (isOnSelectionListenerDisabled()) {
             if (isInGutenbergMode) {
@@ -1018,6 +1048,37 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
 
     fun isTextSelected(): Boolean {
         return selectionStart != selectionEnd
+    }
+
+    fun applyNewLineFormatting(styles: ArrayList<ITextFormat>, start: Int, end: Int) {
+        val realStart = if (start > end) start else end
+        val realEnd = if (end > start) end else start
+        Log.i("AztecText", "Apply ${styles.size} to [$start:$end]")
+        styles.forEach { textFormat ->
+            when (textFormat) {
+                AztecTextFormat.FORMAT_ITALIC,
+                AztecTextFormat.FORMAT_EMPHASIS,
+                AztecTextFormat.FORMAT_CITE,
+                AztecTextFormat.FORMAT_UNDERLINE,
+                AztecTextFormat.FORMAT_STRIKETHROUGH,
+                AztecTextFormat.FORMAT_STRONG,
+                AztecTextFormat.FORMAT_BOLD,
+                AztecTextFormat.FORMAT_CODE -> inlineFormatter.applyInlineStyle(textFormat, realStart, realEnd)
+            }
+        }
+
+        styles.forEach { textFormat ->
+            when (textFormat) {
+                AztecTextFormat.FORMAT_PARAGRAPH,
+                AztecTextFormat.FORMAT_HEADING_1,
+                AztecTextFormat.FORMAT_HEADING_2,
+                AztecTextFormat.FORMAT_HEADING_3,
+                AztecTextFormat.FORMAT_HEADING_4,
+                AztecTextFormat.FORMAT_HEADING_5,
+                AztecTextFormat.FORMAT_HEADING_6,
+                AztecTextFormat.FORMAT_PREFORMAT -> blockFormatter.applyBlockStyle(textFormat, realStart, realEnd)
+            }
+        }
     }
 
     fun toggleFormatting(textFormat: ITextFormat) {
@@ -1159,7 +1220,7 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
         history.undo(this)
     }
 
-    // Helper ======================================================================================
+// Helper ======================================================================================
 
     fun consumeCursorPosition(text: SpannableStringBuilder): Int {
         var cursorPosition = Math.min(selectionStart, text.length)
@@ -1284,13 +1345,13 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
     }
 
     // returns regular or "calypso" html depending on the mode
-    // default behavior returns HTML from this text
+// default behavior returns HTML from this text
     fun toHtml(withCursorTag: Boolean = false): String {
         return toHtml(text, withCursorTag)
     }
 
     // general function accepts any Spannable and converts it to regular or "calypso" html
-    // depending on the mode
+// depending on the mode
     fun toHtml(content: Spannable, withCursorTag: Boolean = false): String {
         val html = toPlainHtml(content, withCursorTag)
 
@@ -1304,7 +1365,7 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
     }
 
     // platform agnostic HTML
-    // default behavior returns HTML from this text
+// default behavior returns HTML from this text
     fun toPlainHtml(withCursorTag: Boolean = false): String {
         return toPlainHtml(text, withCursorTag)
     }
