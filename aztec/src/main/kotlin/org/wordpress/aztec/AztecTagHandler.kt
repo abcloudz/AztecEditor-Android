@@ -54,6 +54,7 @@ class AztecTagHandler(
     val context: Context,
     private val fixedImageWidthRes: Int,
     private val fixedImageHeightRes: Int,
+    private val fixedImageMarginRes: Int,
     val plugins: List<IAztecPlugin> = ArrayList()
 ) : Html.TagHandler {
 
@@ -112,7 +113,15 @@ class AztecTagHandler(
                 handleMediaElement(
                     opening,
                     output,
-                    AztecImageSpan(context, loadingDrawable, nestingLevel, AztecAttributes(attributes), fixedImageWidthRes, fixedImageHeightRes)
+                    AztecImageSpan(
+                        context,
+                        loadingDrawable,
+                        nestingLevel,
+                        AztecAttributes(attributes),
+                        fixedImageWidthRes,
+                        fixedImageHeightRes,
+                        fixedImageMarginRes
+                    )
                 )
                 return true
             }

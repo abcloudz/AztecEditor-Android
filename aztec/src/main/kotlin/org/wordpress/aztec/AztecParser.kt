@@ -59,7 +59,8 @@ import java.util.Comparator
 class AztecParser @JvmOverloads constructor(
     val plugins: List<IAztecPlugin> = listOf(),
     private val fixedImageWidthRes: Int,
-    private val fixedImageHeighRest: Int,
+    private val fixedImageHeightRest: Int,
+    private val fixedImageMarginRes: Int,
     private val ignoredTags: List<String> = listOf("body", "html")
 ) {
     /**
@@ -73,7 +74,7 @@ class AztecParser @JvmOverloads constructor(
         val spanned = SpannableString(
             Html.fromHtml(
                 tidySource,
-                AztecTagHandler(context, fixedImageWidthRes, fixedImageHeighRest, plugins), context, plugins, ignoredTags
+                AztecTagHandler(context, fixedImageWidthRes, fixedImageHeightRest, fixedImageMarginRes, plugins), context, plugins, ignoredTags
             )
         )
 
@@ -88,7 +89,7 @@ class AztecParser @JvmOverloads constructor(
         val spanned = SpannableStringBuilder(
             Html.fromHtml(
                 tidySource,
-                AztecTagHandler(context, fixedImageWidthRes, fixedImageHeighRest, plugins), context, plugins, ignoredTags
+                AztecTagHandler(context, fixedImageWidthRes, fixedImageHeightRest, fixedImageMarginRes, plugins), context, plugins, ignoredTags
             )
         )
 

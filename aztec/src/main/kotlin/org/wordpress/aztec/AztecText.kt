@@ -300,6 +300,7 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
 
     var fixedImageWidthRes: Int = 0
     var fixedImageHeightRes: Int = 0
+    var fixedImageMarginRes: Int = 0
 
     interface OnSelectionChangedListener {
         fun onSelectionChanged(selStart: Int, selEnd: Int)
@@ -358,9 +359,10 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
         isInGutenbergMode = isCompatibleWithGutenberg
     }
 
-    fun setFixedImageSize(widthRes: Int, heightRes: Int) {
+    fun setFixedImageSize(widthRes: Int, heightRes: Int, marginRes: Int) {
         fixedImageWidthRes = widthRes
         fixedImageHeightRes = heightRes
+        fixedImageMarginRes = marginRes
     }
 
     // Newer AppCompatEditText returns Editable?, and using that would require changing all of Aztec to not use `text.`
@@ -1176,7 +1178,7 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
 
     open fun fromHtml(source: String, isInit: Boolean = true) {
         val builder = SpannableStringBuilder()
-        val parser = AztecParser(plugins, fixedImageWidthRes, fixedImageHeightRes)
+        val parser = AztecParser(plugins, fixedImageWidthRes, fixedImageHeightRes, fixedImageMarginRes)
 
         var cleanSource = CleaningUtils.cleanNestedBoldTags(source)
         cleanSource = Format.removeSourceEditorFormatting(cleanSource, isInCalypsoMode, isInGutenbergMode)
@@ -1321,7 +1323,7 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
     }
 
     private fun parseHtml(content: Spannable, withCursorTag: Boolean): String {
-        val parser = AztecParser(plugins, fixedImageWidthRes, fixedImageHeightRes)
+        val parser = AztecParser(plugins, fixedImageWidthRes, fixedImageHeightRes, fixedImageMarginRes)
         val output: SpannableStringBuilder
         try {
             output = SpannableStringBuilder(content)
@@ -1568,7 +1570,7 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
     // Convert selected text to html and add it to clipboard
     fun copy(editable: Editable, start: Int, end: Int) {
         val selectedText = editable.subSequence(start, end)
-        val parser = AztecParser(plugins, fixedImageWidthRes, fixedImageHeightRes)
+        val parser = AztecParser(plugins, fixedImageWidthRes, fixedImageHeightRes, fixedImageMarginRes)
         val output = SpannableStringBuilder(selectedText)
 
         clearMetaSpans(output)
@@ -1635,7 +1637,7 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
 
             if (clip.itemCount > 0) {
                 val textToPaste = if (asPlainText) clip.getItemAt(0).coerceToText(context).toString()
-                else clip.getItemAt(0).coerceToHtmlText(AztecParser(plugins, fixedImageWidthRes, fixedImageHeightRes))
+                else clip.getItemAt(0).coerceToHtmlText(AztecParser(plugins, fixedImageWidthRes, fixedImageHeightRes, fixedImageMarginRes))
 
                 val oldHtml = toPlainHtml().replace("<aztec_cursor>", "")
                 val newHtml = oldHtml.replace(Constants.REPLACEMENT_MARKER_STRING, textToPaste + "<" + AztecCursorSpan.AZTEC_CURSOR_TAG + ">")
@@ -1751,7 +1753,12 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
             val spanStart = text.getSpanStart(unknownHtmlSpan)
 
             val textBuilder = SpannableStringBuilder()
-            textBuilder.append(AztecParser(plugins, fixedImageWidthRes, fixedImageHeightRes).fromHtml(source.getPureHtml(), context).trim())
+            textBuilder.append(
+                AztecParser(plugins, fixedImageWidthRes, fixedImageHeightRes, fixedImageMarginRes).fromHtml(
+                    source.getPureHtml(),
+                    context
+                ).trim()
+            )
             setSelection(spanStart)
 
             disableTextChangedListener()

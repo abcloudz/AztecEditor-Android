@@ -12,11 +12,12 @@ class AztecImageSpan(
     attributes: AztecAttributes = AztecAttributes(),
     fixedWidthRes: Int,
     fixedHeightRes: Int,
+    fixedMarginRes: Int,
     var onImageTappedListener: AztecText.OnImageTappedListener? = null,
     onMediaDeletedListener: AztecText.OnMediaDeletedListener? = null,
     editor: AztecText? = null
 ) : IAztecCenteredImageSpan,
-    AztecMediaSpan(context, drawable, attributes, onMediaDeletedListener, editor, fixedWidthRes, fixedHeightRes) {
+    AztecMediaSpan(context, drawable, attributes, onMediaDeletedListener, editor, fixedWidthRes, fixedHeightRes, fixedMarginRes) {
     override val TAG: String = "img"
 
     override fun onClick() {

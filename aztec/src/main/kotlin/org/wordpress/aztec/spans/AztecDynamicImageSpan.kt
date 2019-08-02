@@ -5,7 +5,6 @@ import android.graphics.Canvas
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
-import android.text.Layout
 import android.text.style.DynamicDrawableSpan
 import android.util.Log
 import org.wordpress.aztec.AztecText
@@ -16,12 +15,14 @@ abstract class AztecDynamicImageSpan(
     val context: Context,
     protected var imageDrawable: Drawable?,
     fixedWidthRes: Int = 0,
-    fixedHeightRes: Int = 0
+    fixedHeightRes: Int = 0,
+    fixedMarginRes: Int = 0
 ) : DynamicDrawableSpan() {
     var textView: AztecText? = null
     var aspectRatio: Double = 1.0
     private val fixedWidth = if (fixedWidthRes == 0) 0 else context.resources.getDimensionPixelSize(fixedWidthRes)
     private val fixedHeight = if (fixedHeightRes == 0) 0 else context.resources.getDimensionPixelSize(fixedHeightRes)
+    protected val fixedMargin = if (fixedMarginRes == 0) 0 else context.resources.getDimensionPixelSize(fixedMarginRes)
 
     private var measuring = false
 
@@ -91,7 +92,7 @@ abstract class AztecDynamicImageSpan(
 
         if (metrics != null && sizeRect.width() > 0) {
             metrics.ascent = -sizeRect.height()
-            metrics.descent = 0
+            metrics.descent = fixedMargin
 
             metrics.top = metrics.ascent
             metrics.bottom = 0
@@ -100,7 +101,7 @@ abstract class AztecDynamicImageSpan(
         return if (textView == null) {
             sizeRect.width()
         } else {
-            (textView!!.width - (textView!!.width - sizeRect.width()) / 2) + 50
+            (textView!!.width - (textView!!.width - sizeRect.width()) / 2) + fixedMargin
         }
     }
 
@@ -161,7 +162,6 @@ abstract class AztecDynamicImageSpan(
 
         computeAspectRatio()
     }
-
 
 
     override fun draw(canvas: Canvas, text: CharSequence, start: Int, end: Int, x: Float, top: Int, y: Int, bottom: Int, paint: Paint) {

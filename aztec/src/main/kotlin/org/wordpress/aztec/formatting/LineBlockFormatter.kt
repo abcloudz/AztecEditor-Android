@@ -144,6 +144,7 @@ class LineBlockFormatter(editor: AztecText) : AztecFormatter(editor) {
             AztecAttributes(attributes),
             editor.fixedImageWidthRes,
             editor.fixedImageHeightRes,
+            editor.fixedImageMarginRes,
             onImageTappedListener,
             onMediaDeletedListener,
             editor

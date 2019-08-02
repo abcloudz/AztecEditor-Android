@@ -6,7 +6,6 @@ import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.drawable.Drawable
 import android.view.Gravity
-import org.wordpress.android.util.AppLog
 import org.wordpress.aztec.AztecAttributes
 import org.wordpress.aztec.AztecText
 import java.util.ArrayList
@@ -16,8 +15,9 @@ abstract class AztecMediaSpan(
     var onMediaDeletedListener: AztecText.OnMediaDeletedListener? = null,
     editor: AztecText? = null,
     fixedWidthRes: Int = 0,
-    fixedHeightRes: Int = 0
-) : AztecDynamicImageSpan(context, drawable, fixedWidthRes, fixedHeightRes), IAztecAttributedSpan {
+    fixedHeightRes: Int = 0,
+    fixedMarginRes: Int = 0
+) : AztecDynamicImageSpan(context, drawable, fixedWidthRes, fixedHeightRes, fixedMarginRes), IAztecAttributedSpan {
     abstract val TAG: String
 
     private val overlays: ArrayList<Pair<Drawable?, Int>> = ArrayList()
@@ -63,6 +63,7 @@ abstract class AztecMediaSpan(
 
         if (imageDrawable != null) {
             var transY = top
+            transY += fixedMargin / 2
             if (mVerticalAlignment == ALIGN_BASELINE) {
                 transY -= paint.fontMetricsInt.descent
             }
