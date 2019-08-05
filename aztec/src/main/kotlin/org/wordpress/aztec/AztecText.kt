@@ -303,9 +303,9 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
     var fixedImageMarginRes: Int = 0
 
     private var isWaitingForNewLineChar = false
-    private var isEnterPressed = false
-    private var preEnterStartIndex = 0
-    private var preEnterEndIndex = 0
+    private var isNewLineAdded = false
+    private var previousLineStartIndex = 0
+    private var previousLineEndIndex = 0
     private var newLineStartIndex = 0
 
     interface OnSelectionChangedListener {
@@ -541,6 +541,12 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
         }
 
         val emptyEditTextBackspaceDetector = InputFilter { source, start, end, dest, dstart, dend ->
+            if (source == Constants.NEWLINE_STRING) {
+                isNewLineAdded = true
+                previousLineStartIndex = selectionStart
+                previousLineEndIndex = selectionEnd
+                Log.v("AztecText", "On new Line Added: $selectionStart:$selectionEnd")
+            }
             if (selectionStart == 0 && selectionEnd == 0
                 && end == 0 && start == 0
                 && dstart == 0 && dend == 0
@@ -569,10 +575,6 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
         if (event.action == KeyEvent.ACTION_DOWN && event.keyCode == KeyEvent.KEYCODE_ENTER) {
             // Check if the external listener has consumed the enter pressed event
             // In that case stop the execution
-            Log.d("AztecText", "on Enter Pressed $selectionStart $selectionEnd")
-            isEnterPressed = true
-            preEnterStartIndex = selectionStart
-            preEnterEndIndex = selectionEnd
             if (onAztecKeyListener?.onEnterKey(text, false, 0, 0) == true) {
                 return true
             }
@@ -914,28 +916,47 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
     }
 
     private fun applyStylesToANewLine(end: Int) {
-        val oldStyles = getAppliedStyles(preEnterStartIndex, preEnterEndIndex)
-        post {
-            applyNewLineFormatting(oldStyles, newLineStartIndex, end)
+        val oldStyles = getAppliedStyles(previousLineStartIndex, previousLineEndIndex)
+        Log.i("AztecText", "Applying new style $newLineStartIndex $end from $previousLineStartIndex $previousLineEndIndex count: ${oldStyles.size}")
+        applyNewLineFormatting(oldStyles, newLineStartIndex, end)
+        val applied = getAppliedStyles(newLineStartIndex, end)
+        Log.w("AztecText", "Applied styles count ${applied.size}")
+        applied.forEach {
+            Log.d("AztecText", "newStyle: ${it.name}")
+        }
+    }
+
+    private fun detectNewLine(selStart: Int, selEnd: Int) {
+        Log.d("AztecText", "onSelectionChanged $selStart $selEnd $isNewLineAdded $isWaitingForNewLineChar")
+        if (isNewLineAdded) {
+            val latestText = if (selStart > 1) {
+                editableText.substring(selStart - 2, selEnd)
+            } else ""
+
+            val containsZWJ = if (latestText.length > 1) latestText[1] == Constants.ZWJ_CHAR else false
+            val containsNewLine = if (latestText.length > 1) latestText[1] == Constants.NEWLINE else false
+
+            if (!containsZWJ && containsNewLine) {
+                Log.i("AztecText", "Should Wait for input")
+                newLineStartIndex = selStart
+                isWaitingForNewLineChar = true
+            }
+
+            if (selStart > newLineStartIndex && isWaitingForNewLineChar) {
+                Log.i("AztecText", "Apply Styles!!! $newLineStartIndex $selEnd")
+                applyStylesToANewLine(selEnd)
+                isWaitingForNewLineChar = false
+                isNewLineAdded = false
+            }
         }
     }
 
     public override fun onSelectionChanged(selStart: Int, selEnd: Int) {
         super.onSelectionChanged(selStart, selEnd)
-        Log.d("AztecText", "onSelectionChanged $selStart $selEnd $isEnterPressed $isWaitingForNewLineChar")
+
         if (!isViewInitialized) return
 
-        if (isEnterPressed) {
-            isEnterPressed = !isEnterPressed
-            isWaitingForNewLineChar = true
-            newLineStartIndex = selStart
-        } else if (preEnterEndIndex > newLineStartIndex) {
-            preEnterEndIndex = newLineStartIndex
-            newLineStartIndex = selStart
-        } else if (isWaitingForNewLineChar) {
-            isWaitingForNewLineChar = false
-            applyStylesToANewLine(selStart)
-        }
+        detectNewLine(selStart, selEnd)
 
         if (isOnSelectionListenerDisabled()) {
             if (isInGutenbergMode) {
@@ -1050,10 +1071,7 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
         return selectionStart != selectionEnd
     }
 
-    fun applyNewLineFormatting(styles: ArrayList<ITextFormat>, start: Int, end: Int) {
-        val realStart = if (start > end) start else end
-        val realEnd = if (end > start) end else start
-        Log.i("AztecText", "Apply ${styles.size} to [$start:$end]")
+    private fun applyNewLineFormatting(styles: ArrayList<ITextFormat>, start: Int, end: Int) {
         styles.forEach { textFormat ->
             when (textFormat) {
                 AztecTextFormat.FORMAT_ITALIC,
@@ -1063,7 +1081,7 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
                 AztecTextFormat.FORMAT_STRIKETHROUGH,
                 AztecTextFormat.FORMAT_STRONG,
                 AztecTextFormat.FORMAT_BOLD,
-                AztecTextFormat.FORMAT_CODE -> inlineFormatter.applyInlineStyle(textFormat, realStart, realEnd)
+                AztecTextFormat.FORMAT_CODE -> inlineFormatter.applyInlineStyle(textFormat, start, end)
             }
         }
 
@@ -1076,7 +1094,7 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
                 AztecTextFormat.FORMAT_HEADING_4,
                 AztecTextFormat.FORMAT_HEADING_5,
                 AztecTextFormat.FORMAT_HEADING_6,
-                AztecTextFormat.FORMAT_PREFORMAT -> blockFormatter.applyBlockStyle(textFormat, realStart, realEnd)
+                AztecTextFormat.FORMAT_PREFORMAT -> blockFormatter.applyBlockStyle(textFormat, start, end)
             }
         }
     }
