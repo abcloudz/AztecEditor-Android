@@ -26,6 +26,7 @@ import android.graphics.drawable.Drawable
 import androidx.core.content.ContextCompat
 import android.text.Editable
 import android.text.Spanned
+import android.util.Log
 import org.wordpress.aztec.plugins.IAztecPlugin
 import org.wordpress.aztec.plugins.html2visual.IHtmlTagHandler
 import org.wordpress.aztec.spans.AztecAudioSpan
@@ -164,6 +165,7 @@ class AztecTagHandler(
             }
             else -> {
                 if (tag.length == 2 && Character.toLowerCase(tag[0]) == 'h' && tag[1] >= '1' && tag[1] <= '6') {
+                    Log.i("AztecTagHandler", "Heading tag ${tag[1]}")
                     handleElement(output, opening, AztecHeadingSpan(nestingLevel, tag, AztecAttributes(attributes)))
                     return true
                 }

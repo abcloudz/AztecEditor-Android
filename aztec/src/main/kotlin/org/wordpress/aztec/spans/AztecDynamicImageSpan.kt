@@ -92,7 +92,7 @@ abstract class AztecDynamicImageSpan(
 
         if (metrics != null && sizeRect.width() > 0) {
             metrics.ascent = -sizeRect.height()
-            metrics.descent = fixedMargin
+            metrics.descent = 0
 
             metrics.top = metrics.ascent
             metrics.bottom = 0
@@ -107,7 +107,7 @@ abstract class AztecDynamicImageSpan(
 
     fun adjustBounds(start: Int): Rect {
         if (fixedWidth > 0 && fixedHeight > 0) {
-            return Rect(0, 0, fixedWidth, fixedHeight)
+            return Rect(0, 0, fixedWidth, fixedHeight + fixedMargin)
         }
         Log.w(TAG, "====================================")
         if (textView == null || textView?.widthMeasureSpec == 0) {

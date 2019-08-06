@@ -7,6 +7,7 @@ import android.text.TextPaint
 import android.text.style.LineHeightSpan
 import android.text.style.MetricAffectingSpan
 import android.text.style.UpdateLayout
+import android.util.Log
 import org.wordpress.aztec.AztecAttributes
 import org.wordpress.aztec.AztecTextFormat
 import org.wordpress.aztec.ITextFormat
@@ -100,30 +101,35 @@ class AztecHeadingSpan @JvmOverloads constructor(
             previousFontMetrics!!.descent = fm.descent
         }
 
-        var addedTopPadding = false
-        var addedBottomPadding = false
+        //ascent: -91 top: -100 descent: 39 bottom: 41
+        //ascent: -70 top: -79 descent: 18 bottom: 20
 
-        if (start == spanStart || start < spanStart) {
-            fm.ascent -= headerStyle.verticalPadding
-            fm.top -= headerStyle.verticalPadding
-            addedTopPadding = true
-        }
-        if (end == spanEnd || spanEnd < end) {
-            fm.descent += headerStyle.verticalPadding
-            fm.bottom += headerStyle.verticalPadding
-            addedBottomPadding = true
-        }
-
-        // apply original font metrics to lines that should not have vertical padding
-        if (!addedTopPadding) {
-            fm.ascent = previousFontMetrics!!.ascent
-            fm.top = previousFontMetrics!!.top
-        }
-
-        if (!addedBottomPadding) {
-            fm.descent = previousFontMetrics!!.descent
-            fm.bottom = previousFontMetrics!!.bottom
-        }
+//        var addedTopPadding = false
+//        var addedBottomPadding = false
+//
+//        if (start == spanStart || start < spanStart) {
+//            fm.ascent -= headerStyle.verticalPadding
+//            fm.top -= headerStyle.verticalPadding
+//            addedTopPadding = true
+//        }
+//        if (end == spanEnd || spanEnd < end) {
+//            fm.descent += headerStyle.verticalPadding
+//            fm.bottom += headerStyle.verticalPadding
+//            addedBottomPadding = true
+//        }
+//
+//        // apply original font metrics to lines that should not have vertical padding
+//        if (!addedTopPadding) {
+//            fm.ascent = previousFontMetrics!!.ascent
+//            fm.top = previousFontMetrics!!.top
+//        }
+//
+//        if (!addedBottomPadding) {
+//            fm.descent = previousFontMetrics!!.descent
+//            fm.bottom = previousFontMetrics!!.bottom
+//        }
+        Log.d("AztecHeadingSpan", "text: ${text.substring(start, end)}")
+        Log.i("AztecHeadingSpan", "ascent: ${fm.ascent} top: ${fm.top} descent: ${fm.descent} bottom: ${fm.bottom}")
     }
 
     override fun updateDrawState(textPaint: TextPaint) {

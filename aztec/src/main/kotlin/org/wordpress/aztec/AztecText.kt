@@ -79,6 +79,7 @@ import org.wordpress.aztec.spans.AztecAudioSpan
 import org.wordpress.aztec.spans.AztecCodeSpan
 import org.wordpress.aztec.spans.AztecCursorSpan
 import org.wordpress.aztec.spans.AztecDynamicImageSpan
+import org.wordpress.aztec.spans.AztecHeadingSpan
 import org.wordpress.aztec.spans.AztecImageSpan
 import org.wordpress.aztec.spans.AztecListItemSpan
 import org.wordpress.aztec.spans.AztecMediaClickableSpan
@@ -1096,6 +1097,13 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
                 AztecTextFormat.FORMAT_HEADING_6,
                 AztecTextFormat.FORMAT_PREFORMAT -> blockFormatter.applyBlockStyle(textFormat, start, end)
             }
+        }
+    }
+
+    fun reformatText() {
+        val spans = text.getSpans(0, length(), AztecHeadingSpan::class.java)
+        spans.forEach {
+//            text.removeSpan(it)
         }
     }
 

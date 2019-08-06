@@ -65,7 +65,7 @@ abstract class AztecMediaSpan(
             var transY = top
             transY += fixedMargin / 2
             if (mVerticalAlignment == ALIGN_BASELINE) {
-                transY -= paint.fontMetricsInt.descent
+//                transY -= paint.fontMetricsInt.descent
             }
 
             val transX = if (imageDrawable?.intrinsicWidth ?: 0 == 0) {
