@@ -18,6 +18,7 @@
 package org.wordpress.aztec
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
@@ -49,6 +50,7 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.WindowManager
 import android.view.inputmethod.BaseInputConnection
+import android.view.inputmethod.InputMethodManager
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.Toast
@@ -1103,7 +1105,7 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
     fun reformatText() {
         val spans = text.getSpans(0, length(), AztecHeadingSpan::class.java)
         spans.forEach {
-//            text.removeSpan(it)
+            //            text.removeSpan(it)
         }
     }
 
@@ -1805,6 +1807,7 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
             val anchorText = anchorInput.text.toString().trim { it <= ' ' }
 
             link(linkText, anchorText, openInNewWindowCheckbox.isChecked)
+
         })
 
         if (linkFormatter.isUrlSelected()) {
@@ -1817,8 +1820,19 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
             dialogInterface.dismiss()
         })
 
+        builder.setOnDismissListener {
+            postDelayed({
+                hideKeyboard()
+            }, 200)
+        }
+
         addLinkDialog = builder.create()
         addLinkDialog!!.show()
+    }
+
+    private fun hideKeyboard() {
+        val imm = this.context.getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+        imm.hideSoftInputFromWindow(windowToken, 0)
     }
 
     @SuppressLint("InflateParams")
