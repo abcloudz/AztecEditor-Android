@@ -163,7 +163,6 @@ abstract class AztecDynamicImageSpan(
         computeAspectRatio()
     }
 
-
     override fun draw(canvas: Canvas, text: CharSequence, start: Int, end: Int, x: Float, top: Int, y: Int, bottom: Int, paint: Paint) {
         canvas.save()
 
