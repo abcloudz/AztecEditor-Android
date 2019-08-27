@@ -297,12 +297,6 @@ open class AztecText : AppCompatEditText, TextWatcher, UnknownHtmlSpan.OnUnknown
     var fixedImageHeightRes: Int = 0
     var fixedImageMarginRes: Int = 0
 
-    private var isWaitingForNewLineChar = false
-    private var isNewLineAdded = false
-    private var previousLineStartIndex = 0
-    private var previousLineEndIndex = 0
-    private var newLineStartIndex = 0
-
     interface OnSelectionChangedListener {
         fun onSelectionChanged(selStart: Int, selEnd: Int)
     }
