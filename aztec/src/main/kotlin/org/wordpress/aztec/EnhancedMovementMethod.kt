@@ -21,7 +21,7 @@ object EnhancedMovementMethod : ArrowKeyMovementMethod() {
         val action = event.action
 
         if (action == MotionEvent.ACTION_UP) {
-            var x = event.x.toInt()
+            var x = event.x
             var y = event.y.toInt()
 
             x -= widget.totalPaddingLeft
@@ -34,7 +34,7 @@ object EnhancedMovementMethod : ArrowKeyMovementMethod() {
 
             val layout = widget.layout
             val line = layout.getLineForVertical(y)
-            val off = layout.getOffsetForHorizontal(line, x.toFloat())
+            val off = layout.getOffsetForHorizontal(line, x)
 
             // get the character's position. This may be the left or the right edge of the character so, find the
             //  other edge by inspecting nearby characters (if they exist)
