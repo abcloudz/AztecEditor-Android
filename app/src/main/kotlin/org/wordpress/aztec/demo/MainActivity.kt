@@ -42,6 +42,7 @@ import org.wordpress.aztec.AztecText
 import org.wordpress.aztec.Html
 import org.wordpress.aztec.IHistoryListener
 import org.wordpress.aztec.ITextFormat
+import org.wordpress.aztec.demo.outlinx.addOutlinxPlugins
 import org.wordpress.aztec.glideloader.GlideImageLoader
 import org.wordpress.aztec.glideloader.GlideVideoThumbnailLoader
 import org.wordpress.aztec.plugins.CssUnderlinePlugin
@@ -179,7 +180,7 @@ open class MainActivity : AppCompatActivity(),
         private val QUOTE_RTL = "<blockquote>לְצַטֵט<br>same quote but LTR</blockquote>"
         private val MARK = "<p>Donec ipsum dolor, <mark style=\"color:#ff0000\">tempor sed</mark> bibendum <mark style=\"color:#1100ff\">vita</mark>.</p>"
 
-        private val EXAMPLE =
+        private val EXAMPLE_ORIGIN =
                 IMG +
                         HEADING +
                         BOLD +
@@ -213,6 +214,29 @@ open class MainActivity : AppCompatActivity(),
                         GUTENBERG_CODE_BLOCK +
                         QUOTE_RTL +
                         MARK
+
+        private val EXAMPLE_OUTLINX = """
+            <p>Thumbnail url:</p>
+            <p><img src="image://SljMwX9YeS?attachmentType=weblink&attachmentID=73FmlkCR3n&aspectRatio=0,525" class="aligncenter size-full"></p>
+            <p></p>
+            <p>Image from gallery:</p>
+            <p><img src="image://vngWNdedSQ?attachmentType=image&attachmentID=vngWNdedSQ&aspectRatio=1,33333" class="aligncenter size-full"></p>
+            <p></p>
+            <p>Image from camera:</p>
+            <p><img src="image://rQnH4FNyiz?attachmentType=image&attachmentID=rQnH4FNyiz&aspectRatio=1,33333" class="aligncenter size-full"></p>
+            <p></p>
+            <p>Video from gallery:</p>
+            <p><img src="image://cqmvwXYwXV?attachmentType=video&attachmentID=p7j5VMLOCK&aspectRatio=0,5625" class="aligncenter size-full"></p>
+            <p></p>
+            <p>Video from camera:</p>
+            <p><img src="image://zr8FP7OyRv?attachmentType=video&attachmentID=bdIPYpi28X&aspectRatio=1,33333"class="aligncenter size-full"></p>
+            <p>YouTube video link:</p>
+            <p><img src="image://bAUCdbJHEV?attachmentType=weblink&attachmentID=ITG9IXlDDH&aspectRatio=0,5625" class="aligncenter size-full"></p>
+            <p>Old image:</p>
+            <p><img class="aligncenter" src="image://hlFzffktKD?aspectRatio=1.3333334"></p>
+        """.trimIndent()
+
+        private val EXAMPLE = EXAMPLE_OUTLINX
 
         private val isRunningTest: Boolean by lazy {
             try {
@@ -449,6 +473,7 @@ open class MainActivity : AppCompatActivity(),
                 .addPlugin(HiddenGutenbergPlugin(visualEditor))
                 .addPlugin(galleryButton)
                 .addPlugin(cameraButton)
+                .addOutlinxPlugins(this)
 
         // initialize the plugins, text & HTML
         if (!isRunningTest) {
